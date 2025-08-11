@@ -1,5 +1,5 @@
 import re
-import pdfplumber
+import fitz
 from docx import Document
 from io import BytesIO
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -12,10 +12,12 @@ SECTION_HINTS = [
 
 def extract_text_from_pdf(file_obj):
     text = []
-    with pdfplumber.open(file_obj) as pdf:
-        for page in pdf.pages:
-            # detect tables as a signal for ATS risk; we still keep text
-            text.append(page.extract_text() or "")
+    pdf_bytes = file_obj.read()
+    pdf_doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    for page in pdf_doc:
+        page_text = page.get_text("text")
+        if page_text:
+            text.append(page_text)
     return "\n".join(text)
 
 def extract_text_from_docx(file_obj):
